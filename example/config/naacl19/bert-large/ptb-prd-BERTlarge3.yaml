@@ -1,0 +1,55 @@
+dataset:
+  observation_fieldnames:
+     - index
+     - sentence
+     - lemma_sentence
+     - upos_sentence
+     - xpos_sentence
+     - morph
+     - head_indices
+     - governance_relations
+     - secondary_relations
+     - extra_info
+     - embeddings
+  corpus:
+    root: /u/scr/nlp/johnhew/data/lstm-word-order/ptb-wsj-sd/
+    train_path: ptb3-wsj-train.conllx
+    dev_path: ptb3-wsj-dev.conllx
+    test_path: ptb3-wsj-test.conllx
+  embeddings:
+    type: subword #{token,subword}
+    root: /u/scr/nlp/johnhew/data/lstm-word-order/ptb-wsj-sd/
+    train_path: raw.train.bertlarge-layers.hdf5
+    dev_path: raw.dev.bertlarge-layers.hdf5
+    test_path: raw.test.bertlarge-layers.hdf5
+  batch_size: 20
+model:
+  hidden_dim: 1024 # ELMo hidden dim
+  #embedding_dim: 1024 # ELMo word embedding dim
+  model_type: BERT-disk # BERT-disk, ELMo-disk, 
+  use_disk: True
+  model_layer: 3 # BERT-base: {1,...,12}; ELMo: {1,2,3}
+probe:
+  task_signature: word_pair # word, word_pair
+  task_name: parse-distance
+  maximum_rank: 1024
+  psd_parameters: True
+  diagonal: False
+  params_path: predictor.params
+probe_training:
+  epochs: 40
+  loss: L1
+reporting:
+  root: /u/scr/nlp/johnhew/results/naacl19/
+  observation_paths:
+    train_path: train.observations
+    dev_path: dev.observations
+    test_path: test.observations
+  prediction_paths:
+    train_path: train.predictions
+    dev_path: dev.predictions
+    test_path: test.predictions
+  reporting_methods:
+    - spearmanr
+    - image_examples
+    - uuas
