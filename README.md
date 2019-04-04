@@ -288,7 +288,7 @@ If you use this repository, please cite:
       @InProceedings{hewitt2019structural,
         author =      "Hewitt, John and Manning, Christopher D.",
         title =       "A Structural Probe for Finding Syntax in Word Representations",
-        booktitle =   "Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 2 (Short Papers)",
+        booktitle =   "North American Chapter of the Association for Computational Linguistics: Human Language Technologies",
         year =        "2019",
         publisher =   "Association for Computational Linguistics",
         location =    "Minneapolis, USA",
