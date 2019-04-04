@@ -6,7 +6,7 @@
 
 Codebase for testing whether hidden states of neural networks encode discrete structures.
 
-Based on the paper [A Structural Probe for Finding Syntax in Word Representations](http://test.com/).
+Based on the paper [A Structural Probe for Finding Syntax in Word Representations](https://nlp.stanford.edu/pubs/hewitt2019structural.pdf).
 
 See the [blog post on structural probes](http://test.com/) for a brief introduction.
 
