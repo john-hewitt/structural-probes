@@ -6,7 +6,9 @@ whitespace-tokenized files.
 Takes the filepath at sys.argv[1]; writes to stdout
 """
 
+import sys
 import argparse
+
 argp = argparse.ArgumentParser()
 argp.add_argument('input_conll_filepath')
 args = argp.parse_args()

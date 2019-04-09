@@ -44,7 +44,6 @@ with h5py.File(args.output_path, 'w') as fout:
     line = line.strip() # Remove trailing characters
     line = '[CLS] ' + line + ' [SEP]'
     tokenized_text = tokenizer.wordpiece_tokenizer.tokenize(line)
-    print(tokenized_text)
     indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
     segment_ids = [1 for x in tokenized_text]
   
