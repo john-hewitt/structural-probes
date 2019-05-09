@@ -65,7 +65,7 @@ class L1DepthLoss(nn.Module):
         batch_loss: average loss in the batch
         total_sents: number of sentences in the batch
     """
-    total_sents = torch.tensor(sum((length_batch != 0).float()), device=self.args['device'])
+    total_sents = torch.sum(length_batch != 0).float()
     labels_1s = (label_batch != -1).float()
     predictions_masked = predictions * labels_1s
     labels_masked = label_batch * labels_1s

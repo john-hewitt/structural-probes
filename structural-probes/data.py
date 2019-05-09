@@ -171,7 +171,7 @@ class SimpleDataset:
     single_layer_features_list = []
     for index in sorted([int(x) for x in indices]):
       observation = observations[index]
-      feature_stack = hf[str(index)].value
+      feature_stack = hf[str(index)]
       single_layer_features = feature_stack[layer_index]
       assert single_layer_features.shape[0] == len(observation.sentence)
       single_layer_features_list.append(single_layer_features)
@@ -389,7 +389,7 @@ class BERTDataset(SubwordDataset):
     single_layer_features_list = []
     for index in tqdm(sorted([int(x) for x in indices]), desc='[aligning embeddings]'):
       observation = observations[index]
-      feature_stack = hf[str(index)].value
+      feature_stack = hf[str(index)]
       single_layer_features = feature_stack[elmo_layer]
       tokenized_sent = subword_tokenizer.wordpiece_tokenizer.tokenize('[CLS] ' + ' '.join(observation.sentence) + ' [SEP]')
       untokenized_sent = observation.sentence
