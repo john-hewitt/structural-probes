@@ -4,3 +4,4 @@ scipy
 PyYAML
 numpy
 h5py
+tqdm
