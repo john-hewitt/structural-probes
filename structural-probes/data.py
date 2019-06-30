@@ -299,7 +299,7 @@ class SubwordDataset(SimpleDataset):
   """
 
   @staticmethod
-  def match_tokenized_to_untokenized(tokenized_sent, untokenized_sent):
+  def match_tokenized_to_untokenized(tokenized_sent, untokenized_sent, connection_character='##'):
     '''Aligns tokenized and untokenized sentence given subwords "##" prefixed
 
     Assuming that each subword token that does not start a new word is prefixed
@@ -319,7 +319,7 @@ class SubwordDataset(SimpleDataset):
     while (untokenized_sent_index < len(untokenized_sent) and
         tokenized_sent_index < len(tokenized_sent)):
       while (tokenized_sent_index + 1 < len(tokenized_sent) and
-          tokenized_sent[tokenized_sent_index + 1].startswith('##')):
+          tokenized_sent[tokenized_sent_index + 1].startswith(connection_character)):
         mapping[untokenized_sent_index].append(tokenized_sent_index)
         tokenized_sent_index += 1
       mapping[untokenized_sent_index].append(tokenized_sent_index)
@@ -407,6 +407,119 @@ class BERTDataset(SubwordDataset):
     embeddings = self.generate_subword_embeddings_from_hdf5(observations, pretrained_embeddings_path, layer_index)
     observations = self.add_embeddings_to_observations(observations, embeddings)
     return observations
+
+class GPT2Dataset(SubwordDataset):
+  """Dataloader for conllx files and pre-computed GPT2 embeddings.
+
+  See BERTDataset, SubwordDataset, SimpleDataset.
+  Attributes:
+    args: the global yaml-derived experiment config dictionary
+  """
+
+
+  def generate_subword_embeddings_from_hdf5(self, observations, filepath, elmo_layer, subword_tokenizer=None):
+    '''Reads pre-computed subword embeddings from hdf5-formatted file.
+
+    Sentences should be given integer keys corresponding to their order
+    in the original file.
+    Embeddings should be of the form (layer_count, subword_sent_length, feature_count)
+    subword_sent_length is the length of the sequence of subword tokens
+    when the subword tokenizer was given each canonical token (as given
+    by the conllx file) independently and tokenized each. Thus, there
+    is a single alignment between the subword-tokenized sentence
+    and the conllx tokens.
+
+    Args:
+      args: the global yaml-derived experiment config dictionary.
+      observations: A list of Observations composing a dataset.
+      filepath: The filepath of a hdf5 file containing embeddings.
+      layer_index: The index corresponding to the layer of representation
+          to be used. (e.g., 0, 1, 2 for BERT0, BERT1, BERT2.)
+      subword_tokenizer: (optional) a tokenizer used to map from
+          conllx tokens to subword tokens.
+    
+    Returns:
+      A list of numpy matrices; one for each observation.
+
+    Raises:
+      AssertionError: sent_length of embedding was not the length of the
+        corresponding sentence in the dataset.
+      Exit: importing pytorch_pretrained_bert has failed, possibly due 
+          to downloading of prespecifed tokenizer problem. Not recoverable;
+          exits immediately.
+    '''
+    if subword_tokenizer == None:
+      try:
+        from pytorch_pretrained_bert import GPT2Tokenizer
+        if self.args['model']['hidden_dim'] == 768:
+          subword_tokenizer = GPT2Tokenizer.from_pretrained('gpt2-small')
+          print('Using gpt2-small tokenizer to align embeddings with PTB tokens')
+        elif self.args['model']['hidden_dim'] == 1024:
+          subword_tokenizer = GPT2Tokenizer.from_pretrained('gpt2-medium')
+          print('Using gpt2-medium tokenizer to align embeddings with PTB tokens')
+        else:
+          print("The heuristic used to choose GPT2 tokenizers has failed...")
+          exit()
+      except Exception as e:
+        print(e)
+        print('Couldn\'t import pytorch-pretrained-bert. Exiting...')
+        exit()
+    hf = h5py.File(filepath, 'r')
+    indices = list(hf.keys())
+    single_layer_features_list = []
+    for index in tqdm(sorted([int(x) for x in indices]), desc='[aligning embeddings]'):
+      observation = observations[index]
+      feature_stack = hf[str(index)].value
+      single_layer_features = feature_stack[elmo_layer]
+      #tokenized_sent = subword_tokenizer.wordpiece_tokenizer.tokenize('[CLS] ' + ' '.join(observation.sentence) + ' [SEP]')
+      tokenized_sent = subword_tokenizer.tokenize(' '.join(observation.sentence))
+      untokenized_sent = observation.sentence
+      untok_tok_mapping = self.match_tokenized_to_untokenized(tokenized_sent, untokenized_sent, connection_character='Ġ')
+      #print(untok_tok_mapping)
+      #print(len(untokenized_sent), untokenized_sent)
+      #print(len(tokenized_sent), tokenized_sent)
+      assert single_layer_features.shape[0] == len(tokenized_sent)
+      single_layer_features = torch.tensor([np.mean(single_layer_features[untok_tok_mapping[i][0]:untok_tok_mapping[i][-1]+1,:], axis=0) for i in range(len(untokenized_sent))])
+      assert single_layer_features.shape[0] == len(observation.sentence)
+      single_layer_features_list.append(single_layer_features)
+    return single_layer_features_list
+
+  def optionally_add_embeddings(self, observations, pretrained_embeddings_path):
+    """Adds pre-computed GPT2 embeddings from disk to Observations."""
+    layer_index = self.args['model']['model_layer']
+    print('Loading GPT2 Pretrained Embeddings from {}; using layer {}'.format(pretrained_embeddings_path, layer_index))
+    embeddings = self.generate_subword_embeddings_from_hdf5(observations, pretrained_embeddings_path, layer_index)
+    observations = self.add_embeddings_to_observations(observations, embeddings)
+    return observations
+
+  @staticmethod
+  def match_tokenized_to_untokenized(tokenized_sent, untokenized_sent, connection_character='Ġ'):
+    '''Aligns tokenized and untokenized sentence given non-subwords "Ġ" prefixed
+
+    Assuming that each subword token that does start a new word is prefixed
+    by "Ġ", computes an alignment between the un-subword-tokenized
+    and subword-tokenized sentences.
+
+    Args:
+      tokenized_sent: a list of strings describing a subword-tokenized sentence
+      untokenized_sent: a list of strings describing a sentence, no subword tok.
+    Returns:
+      A dictionary of type {int: list(int)} mapping each untokenized sentence
+      index to a list of subword-tokenized sentence indices
+    '''
+    mapping = defaultdict(list)
+    untokenized_sent_index = 0
+    tokenized_sent_index = 0
+    while (untokenized_sent_index < len(untokenized_sent) and
+        tokenized_sent_index < len(tokenized_sent)):
+      while (tokenized_sent_index+1  < len(tokenized_sent) and
+          (not tokenized_sent[tokenized_sent_index+1].startswith(connection_character))):
+        mapping[untokenized_sent_index].append(tokenized_sent_index)
+        tokenized_sent_index += 1
+      mapping[untokenized_sent_index].append(tokenized_sent_index)
+      untokenized_sent_index += 1
+      tokenized_sent_index += 1
+    return mapping
 
 
 class ObservationIterator(Dataset):
