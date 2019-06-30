@@ -105,7 +105,7 @@ class WordPairReporter(Reporter):
         words = observation.sentence
         length = int(length)
         prediction = prediction[:length,:length]
-        label = label[:length,:length]
+        label = label[:length,:length].cpu()
         spearmanrs = [spearmanr(pred, gold) for pred, gold in zip(prediction, label)]
         lengths_to_spearmanrs[length].extend([x.correlation for x in spearmanrs])
     mean_spearman_for_each_length = {length: np.mean(lengths_to_spearmanrs[length]) 
@@ -136,7 +136,7 @@ class WordPairReporter(Reporter):
           length_batch, observation_batch):
         length = int(length)
         prediction = prediction[:length,:length]
-        label = label[:length,:length]
+        label = label[:length,:length].cpu()
         words = observation.sentence
         fontsize = 5*( 1 + np.sqrt(len(words))/200)
         plt.clf()
@@ -194,7 +194,7 @@ class WordPairReporter(Reporter):
         length = int(length)
         assert length == len(observation.sentence)
         prediction = prediction[:length,:length]
-        label = label[:length,:length]
+        label = label[:length,:length].cpu()
 
         gold_edges = prims_matrix_to_edges(label, words, poses)
         pred_edges = prims_matrix_to_edges(prediction, words, poses)
@@ -266,7 +266,7 @@ class WordReporter(Reporter):
         words = observation.sentence
         length = int(length)
         prediction = prediction[:length]
-        label = label[:length]
+        label = label[:length].cpu()
         sent_spearmanr = spearmanr(prediction, label)
         lengths_to_spearmanrs[length].append(sent_spearmanr.correlation)
     mean_spearman_for_each_length = {length: np.mean(lengths_to_spearmanrs[length]) 
@@ -303,7 +303,7 @@ class WordReporter(Reporter):
           prediction_batch, label_batch,
           length_batch, observation_batch):
         length = int(length)
-        label = list(label[:length])
+        label = list(label[:length].cpu())
         prediction = prediction.data[:length]
         words = observation.sentence
         poses = observation.xpos_sentence
@@ -333,7 +333,7 @@ class WordReporter(Reporter):
         plt.clf()
         length = int(length)
         prediction = prediction[:length]
-        label = label[:length]
+        label = label[:length].cpu()
         words = observation.sentence
         fontsize = 6
         cumdist = 0
