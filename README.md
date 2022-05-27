@@ -281,6 +281,11 @@ Right now, the official way to run experiments on new datasets and representatio
 1. Write contextual word representations to disk for each of the train, dev, and test split in `hdf5` format, where the index of the sentence in the `conllx` file is the key to the `hdf5` dataset object. That is, your dataset file should look a bit like `{'0': <np.ndarray(size=(1,SEQLEN1,FEATURE_COUNT))>, '1':<np.ndarray(size=(1,SEQLEN1,FEATURE_COUNT))>...}`, etc. Note here that `SEQLEN` for each sentence must be the number of tokens in the sentence as specified by the `conllx` file.
 1. Edit a `config` file from `example/config` to match the paths to your data, as well as the hidden dimension and labels for the columns in the `conllx` file. Look at the experiment config section of this README for more information therein. One potential gotcha is that you _must_ have an `xpos_sentence` field in your conllx (as labeled by your yaml config) since this will be used at evaluation time. 
 
+## Answers to some questions
+
+- Q. I'm getting really bad scores (e.g., on GPT-2); does it really do that badly? A. Well, probably not; the activations of GPT-2 are _huge_ (in the hundreds usually) and so it looks like the optimization does a bad job. Change the init of the probe matrix to be much smaller and it might fix it.
+- Q. Hey I'd like to measure what about syntax my representation helps predict beyond what this interesting baseline gives, not just whether my representation is better in an absolute sense. A: Hey nice, [there's a codebase for that](https://github.com/john-hewitt/conditional-probing).
+
 ## Citation
 
 If you use this repository, please cite:
