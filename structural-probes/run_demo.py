@@ -171,7 +171,7 @@ if __name__ == '__main__':
     torch.manual_seed(cli_args.seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-  yaml_args= yaml.load(open(cli_args.experiment_config))
+  yaml_args= yaml.safe_load(open(cli_args.experiment_config))
   run_experiment.setup_new_experiment_dir(cli_args, yaml_args, cli_args.results_dir)
   device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
   yaml_args['device'] = device
